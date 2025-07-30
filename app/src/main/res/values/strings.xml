@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Comarcas View</string>
+    <string name="app_description">Visualizador de Imágenes y Videos para Smart TV</string>
+    <string name="loading">Cargando...</string>
+    <string name="no_files">No se encontraron archivos multimedia</string>
+    <string name="internal_storage">Almacenamiento Interno</string>
+    <string name="usb_storage">Almacenamiento USB</string>
+    <string name="select_file">Seleccione un archivo para visualizar</string>
+    <string name="access_restricted">Acceso Restringido</string>
+    <string name="enter_password">Ingrese la clave de acceso para continuar</string>
+    <string name="incorrect_password">Clave incorrecta. Intente nuevamente.</string>
+    <string name="enter_button">Ingresar</string>
+</resources>

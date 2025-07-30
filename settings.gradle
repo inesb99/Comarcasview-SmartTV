@@ -1,0 +1,2 @@
+rootProject.name = "SmartTV-OpenApp" 
+include ':app' 

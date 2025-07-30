@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comarcas View - Smart TV</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid #4CAF50;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .content-area {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .storage-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .storage-btn {
+            padding: 15px 25px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+
+        .storage-btn:hover, .storage-btn:focus {
+            background: #45a049;
+            transform: translateY(-2px);
+            outline: 2px solid #fff;
+        }
+
+        .storage-btn.active {
+            background: #2196F3;
+        }
+
+        .file-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #555;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .file-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #444;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-item:hover, .file-item:focus {
+            background: rgba(76, 175, 80, 0.3);
+            outline: 2px solid #4CAF50;
+        }
+
+        .file-item.selected {
+            background: rgba(33, 150, 243, 0.5);
+            border-left: 4px solid #2196F3;
+        }
+
+        .file-icon {
+            width: 24px;
+            height: 24px;
+            background-size: contain;
+        }
+
+        .file-icon.image {
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>');
+        }
+
+        .file-icon.video {
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>');
+        }
+
+        .preview-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .media-viewer {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .fullscreen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: black;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fullscreen-media {
+            width: 100vw;
+            height: 100vh;
+            object-fit: contain;
+        }
+
+        .close-fullscreen {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 2em;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+            z-index: 10000;
+        }
+
+        .close-fullscreen:hover, .close-fullscreen:focus {
+            background: rgba(255, 255, 255, 0.4);
+            outline: 2px solid #fff;
+        }
+
+        .no-files {
+            text-align: center;
+            color: #888;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #4CAF50;
+            font-size: 1.2em;
+        }
+
+        /* Auth Modal */
+        .auth-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .auth-content {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid #4CAF50;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .auth-content h2 {
+            margin-bottom: 20px;
+            font-size: 2em;
+            color: #4CAF50;
+        }
+
+        .auth-input {
+            padding: 15px;
+            font-size: 1.5em;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-align: center;
+            margin: 20px 0;
+            width: 300px;
+        }
+
+        .auth-input:focus {
+            outline: none;
+            border-color: #2196F3;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .auth-btn {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .auth-btn:hover, .auth-btn:focus {
+            background: #45a049;
+            outline: 2px solid #fff;
+        }
+
+        .error-message {
+            color: #f44336;
+            margin-top: 10px;
+            font-size: 1.1em;
+        }
+
+        .file-info {
+            font-size: 0.9em;
+            color: #ccc;
+            margin-left: auto;
+        }
+
+        /* Scrollbar personalizado */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4CAF50;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <!-- Modal de Autenticación -->
+    <div id="authModal" class="auth-modal">
+        <div class="auth-content">
+            <h2>🔒 Acceso Restringido</h2>
+            <p>Ingrese la clave de acceso para continuar:</p>
+            <input type="password" id="authInput" class="auth-input" placeholder="Clave de acceso" maxlength="10">
+            <br>
+            <button onclick="authenticate()" class="auth-btn">Ingresar</button>
+            <div id="errorMessage" class="error-message"></div>
+        </div>
+    </div>
+
+    <div class="container" id="mainApp" style="display: none;">
+        <div class="header">
+            <h1>📺 Comarcas View - Smart TV</h1>
+            <p>Visualizador de Imágenes y Videos para Smart TV</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="storage-buttons">
+                    <button class="storage-btn active" onclick="loadStorage('internal')" id="internalBtn">
+                        💾 Interno
+                    </button>
+                    <button class="storage-btn" onclick="loadStorage('usb')" id="usbBtn">
+                        🔌 USB
+                    </button>
+                </div>
+
+                <div id="fileList" class="file-list">
+                    <div class="loading">Cargando archivos...</div>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <div class="preview-area" id="previewArea">
+                    <p style="color: #888; font-size: 1.5em;">Seleccione un archivo para visualizar</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay de pantalla completa -->
+    <div id="fullscreenOverlay" class="fullscreen-overlay">
+        <button class="close-fullscreen" onclick="exitFullscreen()" tabindex="0">×</button>
+        <div id="fullscreenContent"></div>
+    </div>
+
+    <script>
+        const CORRECT_PASSWORD = "5066109571";
+        const AUTH_KEY = "smarttv_authenticated";
+        
+        let currentStorage = 'internal';
+        let currentFiles = [];
+        let selectedFileIndex = -1;
+
+        // Verificar autenticación al cargar
+        window.onload = function() {
+            if (localStorage.getItem(AUTH_KEY) === 'true') {
+                showMainApp();
+            } else {
+                document.getElementById('authInput').focus();
+            }
+        };
+
+        function authenticate() {
+            const input = document.getElementById('authInput');
+            const errorDiv = document.getElementById('errorMessage');
+            
+            if (input.value === CORRECT_PASSWORD) {
+                localStorage.setItem(AUTH_KEY, 'true');
+                showMainApp();
+            } else {
+                errorDiv.textContent = 'Clave incorrecta. Intente nuevamente.';
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        function showMainApp() {
+            document.getElementById('authModal').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            loadStorage('internal');
+        }
+
+        // Permitir Enter en el campo de clave
+        document.getElementById('authInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                authenticate();
+            }
+        });
+
+        function loadStorage(type) {
+            currentStorage = type;
+            
+            // Actualizar botones
+            document.querySelectorAll('.storage-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(type + 'Btn').classList.add('active');
+            
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '<div class="loading">Cargando archivos...</div>';
+            
+            // Cargar archivos reales desde Android
+            setTimeout(() => {
+                loadRealFiles(type);
+            }, 500);
+        }
+
+        function loadRealFiles(storageType) {
+            try {
+                let filesJson = '';
+                
+                if (typeof AndroidFileSystem !== 'undefined') {
+                    // Usar la interfaz Android real
+                    if (storageType === 'internal') {
+                        filesJson = AndroidFileSystem.getInternalFiles();
+                    } else {
+                        filesJson = AndroidFileSystem.getUSBFiles();
+                    }
+                    
+                    if (filesJson) {
+                        currentFiles = JSON.parse(filesJson);
+                    } else {
+                        currentFiles = [];
+                    }
+                } else {
+                    // Fallback para pruebas en navegador
+                    currentFiles = getMockFiles(storageType);
+                }
+                
+                displayFiles(currentFiles);
+            } catch (error) {
+                console.error('Error loading files:', error);
+                currentFiles = getMockFiles(storageType);
+                displayFiles(currentFiles);
+            }
+        }
+
+        function getMockFiles(storageType) {
+            // Archivos de ejemplo para pruebas
+            const mockFiles = {
+                internal: [
+                    { name: 'foto1.jpg', type: 'image', path: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="%234CAF50"/><text x="100" y="100" text-anchor="middle" fill="white" font-size="16">Imagen de Prueba</text></svg>', size: 1024000 },
+                    { name: 'video1.mp4', type: 'video', path: 'data:video/mp4;base64,', size: 5120000 },
+                    { name: 'paisaje.png', type: 'image', path: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="%232196F3"/><text x="100" y="100" text-anchor="middle" fill="white" font-size="16">Paisaje</text></svg>', size: 2048000 }
+                ],
+                usb: [
+                    { name: 'vacaciones.jpg', type: 'image', path: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23FF9800"/><text x="100" y="100" text-anchor="middle" fill="white" font-size="16">Vacaciones</text></svg>', size: 3072000 },
+                    { name: 'concierto.mp4', type: 'video', path: 'data:video/mp4;base64,', size: 10240000 }
+                ]
+            };
+
+            return mockFiles[storageType] || [];
+        }
+
+        function displayFiles(files) {
+            const fileList = document.getElementById('fileList');
+            
+            if (files.length === 0) {
+                fileList.innerHTML = '<div class="no-files">No se encontraron archivos multimedia</div>';
+                return;
+            }
+
+            let html = '';
+            files.forEach((file, index) => {
+                const fileSize = formatFileSize(file.size || 0);
+                html += `
+                    <div class="file-item" onclick="selectFile(${index})" tabindex="0" data-index="${index}">
+                        <div class="file-icon ${file.type}"></div>
+                        <span>${file.name}</span>
+                        <span class="file-info">${fileSize}</span>
+                    </div>
+                `;
+            });
+            
+            fileList.innerHTML = html;
+            selectedFileIndex = -1;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function selectFile(index) {
+            // Remover selección anterior
+            document.querySelectorAll('.file-item').forEach(item => item.classList.remove('selected'));
+            
+            // Agregar selección actual
+            const fileItems = document.querySelectorAll('.file-item');
+            if (fileItems[index]) {
+                fileItems[index].classList.add('selected');
+                selectedFileIndex = index;
+            }
+            
+            const file = currentFiles[index];
+            const previewArea = document.getElementById('previewArea');
+            
+            if (file.type === 'image') {
+                previewArea.innerHTML = `
+                    <img src="${file.path}" class="media-viewer" onclick="enterFullscreen(this)" 
+                         onerror="this.src='data:image/svg+xml,<svg xmlns=\\"http://www.w3.org/2000/svg\\" viewBox=\\"0 0 200 200\\"><rect width=\\"200\\" height=\\"200\\" fill=\\"%23333\\"/><text x=\\"100\\" y=\\"100\\" text-anchor=\\"middle\\" fill=\\"white\\" font-size=\\"16\\">Imagen no disponible</text></svg>'"
+                         alt="${file.name}" tabindex="0">
+                `;
+            } else if (file.type === 'video') {
+                previewArea.innerHTML = `
+                    <video class="media-viewer" controls onclick="enterFullscreen(this)" tabindex="0"
+                           onerror="this.innerHTML='<p style=\\"color: white; text-align: center;\\">Video no disponible</p>'">
+                        <source src="${file.path}" type="video/mp4">
+                        Tu navegador no soporta el elemento video.
+                    </video>
+                `;
+            }
+        }
+
+        function enterFullscreen(element) {
+            const overlay = document.getElementById('fullscreenOverlay');
+            const content = document.getElementById('fullscreenContent');
+            
+            if (element.tagName === 'IMG') {
+                content.innerHTML = `<img src="${element.src}" class="fullscreen-media" alt="${element.alt}">`;
+            } else if (element.tagName === 'VIDEO') {
+                const video = element.cloneNode(true);
+                video.className = 'fullscreen-media';
+                video.controls = true;
+                video.autoplay = true;
+                content.innerHTML = '';
+                content.appendChild(video);
+            }
+            
+            overlay.style.display = 'flex';
+            
+            // Ocultar cursor después de 3 segundos
+            let cursorTimeout;
+            function hideCursor() {
+                overlay.style.cursor = 'none';
+                document.querySelector('.close-fullscreen').style.opacity = '0.3';
+            }
+            
+            function showCursor() {
+                overlay.style.cursor = 'default';
+                document.querySelector('.close-fullscreen').style.opacity = '1';
+                clearTimeout(cursorTimeout);
+                cursorTimeout = setTimeout(hideCursor, 3000);
+            }
+            
+            overlay.addEventListener('mousemove', showCursor);
+            overlay.addEventListener('click', showCursor);
+            showCursor();
+        }
+
+        function exitFullscreen() {
+            document.getElementById('fullscreenOverlay').style.display = 'none';
+        }
+
+        // Controles de teclado para Smart TV
+        document.addEventListener('keydown', function(e) {
+            if (document.getElementById('authModal').style.display !== 'none') {
+                return; // No procesar teclas si el modal de auth está activo
+            }
+            
+            const overlay = document.getElementById('fullscreenOverlay');
+            
+            if (overlay.style.display === 'flex') {
+                // Controles en pantalla completa
+                if (e.key === 'Escape' || e.key === 'Backspace') {
+                    exitFullscreen();
+                }
+                return;
+            }
+            
+            // Controles en la interfaz principal
+            switch(e.key) {
+                case 'ArrowUp':
+                    e.preventDefault();
+                    navigateFiles(-1);
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    navigateFiles(1);
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    switchStorage();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    switchStorage();
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    if (selectedFileIndex >= 0) {
+                        const previewImg = document.querySelector('.media-viewer');
+                        if (previewImg) {
+                            enterFullscreen(previewImg);
+                        }
+                    }
+                    break;
+                case 'Escape':
+                case 'Backspace':
+                    // Salir de la aplicación o volver
+                    break;
+            }
+        });
+
+        function navigateFiles(direction) {
+            if (currentFiles.length === 0) return;
+            
+            let newIndex = selectedFileIndex + direction;
+            
+            if (newIndex < 0) {
+                newIndex = currentFiles.length - 1;
+            } else if (newIndex >= currentFiles.length) {
+                newIndex = 0;
+            }
+            
+            selectFile(newIndex);
+        }
+
+        function switchStorage() {
+            if (currentStorage === 'internal') {
+                loadStorage('usb');
+            } else {
+                loadStorage('internal');
+            }
+        }
+
+        // Agregar eventos de teclado a elementos focusables
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        const index = parseInt(this.dataset.index);
+                        selectFile(index);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
